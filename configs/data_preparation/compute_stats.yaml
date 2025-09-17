@@ -1,0 +1,12 @@
+# Compute global normalization statistics from TEMPO data
+
+# REQUIRED: Input and output directories
+input_dir: "data/tempo_jan2025_LA/raw"
+output_dir: "data/tempo_stats"
+
+# Number of files to use for statistics
+max_files: 10
+
+# Processing parameters
+band: "band_290_490_nm"
+min_radiance: 1.0

@@ -1,0 +1,37 @@
+# Configuration for preparing ML-ready tiles from TEMPO data
+
+# REQUIRED: Input and output directories
+input_dir: "data/tempo_jan2025_LA/raw"
+output_dir: "data/tempo_jan2025_LA_tiles"
+
+# Global normalization (optional)
+# If not provided, will use per-file normalization
+normalization:
+  # Option 1: Load from .pt files (run compute_stats.sh first)
+  mean_file: "data/tempo_stats/tempo_mean_spectrum.pt"
+  std_file: "data/tempo_stats/tempo_std_spectrum.pt"
+
+  # Option 2: Specify values directly in config (1028 values each)
+  # mean_spectrum: [value1, value2, ...]
+  # std_spectrum: [value1, value2, ...]
+
+# Processing parameters
+processing:
+  # Which band to use
+  band: "band_290_490_nm"
+
+  # Tile dimensions [mirror, track]
+  tile_size: [64, 64]
+
+  # Number of tiles to extract per file
+  tiles_per_file: 64
+
+  # Radiance preprocessing
+  min_radiance: 1.0  # Clamp before log
+  clip_min: -10       # Clip z-scores
+  clip_max: 10
+
+# Train/val split
+split:
+  val_fraction: 0.3
+  seed: 42

@@ -1,0 +1,117 @@
+TEMPO Project Structure
+=======================
+Last Updated: 2025-01-17
+
+Root Directory: /n/holylfs06/LABS/finkbeiner_lab/Users/cfpark00/datadir/TEMPO/
+Additional Directory: /n/home12/cfpark00/TEMPO/
+
+Core Structure:
+===============
+
+src/
+├── scripts/                          # Orchestration scripts (entry points)
+│   ├── download_tempo_data.py       # Download TEMPO RAD L1 data from URL list
+│   ├── download_tempo_no2_data.py   # Download TEMPO NO2 L2 data
+│   ├── download_tempo_o3tot_data.py # Download TEMPO O3TOT L2 data
+│   ├── download_tempo_hcho_data.py  # Download TEMPO HCHO L2 data
+│   ├── download_tempo_cldo4_data.py # Download TEMPO CLDO4 L2 data
+│   ├── compute_tempo_stats.py       # Compute global mean/std for normalization
+│   ├── prepare_tempo_tiles.py       # Extract tiles from TEMPO files (with source tracking)
+│   └── train_vae.py                 # Train VAE on TEMPO tiles
+├── model.py                          # Complete VAE model (exact mltools architecture)
+├── tempo_data.py                    # TEMPO tile data loading with buffering
+├── train_utils.py                   # Training utilities with live plotting
+└── utils.py                          # Shared utilities (init_directory)
+
+configs/
+├── data/                             # Data download configs
+│   ├── download_tempo_jan_2025_LA.yaml
+│   ├── download_tempo_no2_jan_2025_LA.yaml
+│   ├── download_tempo_o3tot_jan_2025_LA.yaml
+│   ├── download_tempo_hcho_jan_2025_LA.yaml
+│   └── download_tempo_cldo4_jan_2025_LA.yaml
+├── data_preparation/                 # Data processing configs
+│   ├── compute_stats.yaml
+│   └── prepare_tiles.yaml
+└── training/                         # Model training configs
+    └── train_vae_default.yaml       # VAE training configuration
+
+scripts/                              # Bash wrapper scripts
+├── data/
+│   ├── download_tempo_jan_2025_LA.sh
+│   ├── download_tempo_no2_jan_2025_LA.sh
+│   ├── download_tempo_o3tot_jan_2025_LA.sh
+│   ├── download_tempo_hcho_jan_2025_LA.sh
+│   └── download_tempo_cldo4_jan_2025_LA.sh
+├── data_preparation/
+│   ├── compute_stats.sh
+│   └── prepare_tiles.sh
+└── training/
+    └── train_vae_default.sh         # Train VAE with default config
+
+data/                                 # All data outputs (gitignored)
+├── tempo_jan2025_LA/                # Downloaded RAD L1 data
+│   └── raw/                         # .nc files
+├── tempo_jan2025_LA_NO2/           # Downloaded NO2 L2 data
+│   └── raw/                         # .nc files
+├── tempo_stats/                     # Global normalization statistics
+│   ├── tempo_mean_spectrum.pt
+│   └── tempo_std_spectrum.pt
+└── tempo_jan2025_LA_tiles/         # ML-ready tiles
+    ├── train/                       # Training tiles (.pt files)
+    ├── val/                         # Validation tiles (.pt files)
+    ├── mean_spectrum.pt             # Copy of normalization stats
+    ├── std_spectrum.pt
+    ├── split_info.json              # Source file mappings for train/val
+    └── manifest.yaml                # Processing metadata
+
+docs/
+├── logs/                            # Daily development logs
+│   ├── 2025-01-17/
+│   │   └── 00-06_tempo_data_pipeline_setup.md
+│   └── 2025-09-17/
+│       ├── 02-03_tempo_l2_products_migration.md
+│       └── 03-12_vae_implementation_cleanup.md
+├── structure.txt                    # This file
+├── repo_usage.md                    # Development principles
+└── closing_tasks.md                 # End-of-session checklist
+
+old/                                 # Legacy code for reference
+├── run.py                          # Old training script
+├── utils.py                        # Old utilities
+├── config.yaml                     # Old config
+└── *.ipynb                         # Various notebooks
+
+scratch/                            # Temporary work (gitignored)
+├── check_nc_dimensions.ipynb      # Check TEMPO file dimensions
+├── simple_5panel_plot.py          # 6-panel visualization of all products
+├── check_l2_variables.py          # Inspect L2 product variables
+├── check_all_tempo_structure.py   # Complete file structure analysis
+├── compare_l1_l2_alignment.ipynb  # L1/L2 alignment verification
+├── compare_l1_all_l2_products.ipynb # All products comparison
+└── .gitkeep
+
+test_load_tiles.ipynb               # Notebook for testing tile loading
+
+Other Files:
+============
+.env                                # Environment variables (DATA_DIR=./data)
+.gitignore                         # Git ignore rules
+CLAUDE.md                          # Project conventions
+pyproject.toml                     # Project dependencies (managed by uv)
+uv.lock                           # Locked dependencies
+
+Data Flow:
+==========
+1. Raw TEMPO files (.nc) → download_tempo_data.py → data/tempo_jan2025_LA/raw/
+2. Multiple .nc files → compute_tempo_stats.py → data/tempo_stats/*.pt
+3. Raw files + stats → prepare_tempo_tiles.py → data/tempo_jan2025_LA_tiles/
+
+Key Conventions:
+================
+- All Python code in src/
+- All configs in configs/ with subfolders by purpose
+- All bash scripts in scripts/ with matching structure
+- All outputs to data/ (gitignored)
+- Fail-fast validation (no silent defaults)
+- Global normalization for ML reproducibility

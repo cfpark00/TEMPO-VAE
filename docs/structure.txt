@@ -1,6 +1,6 @@
 TEMPO Project Structure
 =======================
-Last Updated: 2025-01-17
+Last Updated: 2025-09-18
 
 Root Directory: /n/holylfs06/LABS/finkbeiner_lab/Users/cfpark00/datadir/TEMPO/
 Additional Directory: /n/home12/cfpark00/TEMPO/
@@ -17,7 +17,9 @@ src/
 │   ├── download_tempo_cldo4_data.py # Download TEMPO CLDO4 L2 data
 │   ├── compute_tempo_stats.py       # Compute global mean/std for normalization
 │   ├── prepare_tempo_tiles.py       # Extract tiles from TEMPO files (with source tracking)
-│   └── train_vae.py                 # Train VAE on TEMPO tiles
+│   ├── train_vae.py                 # Train VAE on TEMPO tiles
+│   ├── analyze_reconstruction.py    # Analyze VAE reconstructions on validation data
+│   └── extract_pca_components.py    # Extract PCA components for RGB visualization
 ├── model.py                          # Complete VAE model (exact mltools architecture)
 ├── tempo_data.py                    # TEMPO tile data loading with buffering
 ├── train_utils.py                   # Training utilities with live plotting
@@ -33,8 +35,11 @@ configs/
 ├── data_preparation/                 # Data processing configs
 │   ├── compute_stats.yaml
 │   └── prepare_tiles.yaml
-└── training/                         # Model training configs
-    └── train_vae_default.yaml       # VAE training configuration
+├── training/                         # Model training configs
+│   └── train_vae_default.yaml       # VAE training configuration
+└── analysis/                         # Analysis and visualization configs
+    ├── reconstruction_analysis.yaml # VAE reconstruction analysis
+    └── extract_pca_components.yaml  # PCA component extraction
 
 scripts/                              # Bash wrapper scripts
 ├── data/
@@ -46,8 +51,10 @@ scripts/                              # Bash wrapper scripts
 ├── data_preparation/
 │   ├── compute_stats.sh
 │   └── prepare_tiles.sh
-└── training/
-    └── train_vae_default.sh         # Train VAE with default config
+├── training/
+│   └── train_vae_default.sh         # Train VAE with default config
+└── analysis/
+    └── extract_pca_components.sh    # Extract PCA components
 
 data/                                 # All data outputs (gitignored)
 ├── tempo_jan2025_LA/                # Downloaded RAD L1 data
@@ -57,21 +64,34 @@ data/                                 # All data outputs (gitignored)
 ├── tempo_stats/                     # Global normalization statistics
 │   ├── tempo_mean_spectrum.pt
 │   └── tempo_std_spectrum.pt
-└── tempo_jan2025_LA_tiles/         # ML-ready tiles
-    ├── train/                       # Training tiles (.pt files)
-    ├── val/                         # Validation tiles (.pt files)
-    ├── mean_spectrum.pt             # Copy of normalization stats
-    ├── std_spectrum.pt
-    ├── split_info.json              # Source file mappings for train/val
-    └── manifest.yaml                # Processing metadata
+├── tempo_jan2025_LA_tiles/         # ML-ready tiles
+│   ├── train/                       # Training tiles (.pt files)
+│   ├── val/                         # Validation tiles (.pt files)
+│   ├── mean_spectrum.pt             # Copy of normalization stats
+│   ├── std_spectrum.pt
+│   ├── split_info.json              # Source file mappings for train/val
+│   └── manifest.yaml                # Processing metadata
+├── tempo_pca_components/            # PCA analysis outputs
+│   ├── pca_model.pkl                # Fitted PCA model
+│   ├── pca_components.pt            # PCA components and stats
+│   └── sample_projections.pt        # Sample data projections
+├── vae_training/                    # VAE training outputs
+│   └── default_run/
+│       ├── checkpoints/             # Model checkpoints
+│       ├── figures/                 # Training plots
+│       └── logs/                    # Training logs
+└── analysis/                        # Analysis outputs
+    └── vae_reconstruction_default_155k/  # Reconstruction visualizations
 
 docs/
 ├── logs/                            # Daily development logs
 │   ├── 2025-01-17/
 │   │   └── 00-06_tempo_data_pipeline_setup.md
-│   └── 2025-09-17/
-│       ├── 02-03_tempo_l2_products_migration.md
-│       └── 03-12_vae_implementation_cleanup.md
+│   ├── 2025-09-17/
+│   │   ├── 02-03_tempo_l2_products_migration.md
+│   │   └── 03-12_vae_implementation_cleanup.md
+│   └── 2025-09-18/
+│       └── 13-54_git_setup_and_analysis_tools.md
 ├── structure.txt                    # This file
 ├── repo_usage.md                    # Development principles
 └── closing_tasks.md                 # End-of-session checklist

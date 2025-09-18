@@ -1,0 +1,21 @@
+# Analysis configuration for VAE reconstruction evaluation
+output_dir: data/analysis/vae_reconstruction_default_155k
+
+# Model configuration
+model:
+  checkpoint_path: /n/home12/cfpark00/TEMPO/data/vae_training/default_run/checkpoints/ckpt_step=155000.pt
+  training_config_path: /n/home12/cfpark00/TEMPO/configs/training/train_vae_default.yaml
+
+# Data configuration
+data:
+  nc_path: /n/home12/cfpark00/TEMPO/data/tempo_jan2025_LA
+  tiles_path: /n/home12/cfpark00/TEMPO/data/tempo_jan2025_LA_tiles #tiles_path is used to read split_info.json and where it got mean/std norm from and real analysis is done on the nc.
+
+# Visualization settings
+visualization:
+  mode: pca_rgb  # Options: single_channel, pca_rgb
+  pca_components_path: data/tempo_pca_components/pca_components.pt  # Path to PCA components
+  single_channel: 500  # Channel to visualize if mode is single_channel
+
+# Random seed for reproducibility
+seed: 42 #only place where it manifests is the vae latent random

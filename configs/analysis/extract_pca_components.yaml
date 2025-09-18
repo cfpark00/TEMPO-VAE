@@ -1,0 +1,27 @@
+# Configuration for extracting PCA components from TEMPO spectral data
+
+# REQUIRED: Input and output directories
+input_dir: "data/tempo_jan2025_LA/raw"
+output_dir: "data/tempo_pca_components"
+
+# Normalization stats (same as used for tiles)
+normalization:
+  mean_file: "data/tempo_stats/tempo_mean_spectrum.pt"
+  std_file: "data/tempo_stats/tempo_std_spectrum.pt"
+
+# Sampling parameters
+sampling:
+  pixels_per_file: 256       # Number of random pixels to sample from each file
+  max_files: 10             # Maximum number of files to process
+  seed: 42                   # Random seed for reproducible sampling
+
+# PCA parameters
+pca:
+  n_components: 3            # Number of PCA components to extract
+
+# Processing parameters
+processing:
+  band: "band_290_490_nm"    # Which band to use
+  min_radiance: 1.0          # Clamp before log (same as tiles)
+  clip_min: -10              # Clip z-scores (same as tiles)
+  clip_max: 10

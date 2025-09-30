@@ -585,6 +585,8 @@ class AutoencoderKL(nn.Module):
         weight_decay=1.0e-5,
         nll_loss_type="l1",
         kl_weight=0.000001,
+        no2_weight=0.0,
+        no2_mlp_hidden=None,
         **kwargs,
     ):
         super().__init__()
@@ -601,6 +603,7 @@ class AutoencoderKL(nn.Module):
             "l2",
         ], "nll_loss_type must be l1 or l2"
         self.kl_weight = kl_weight
+        self.no2_weight = no2_weight
 
         z_channels = self.encoder.z_channels
         self.quant_conv = get_conv(
@@ -612,6 +615,21 @@ class AutoencoderKL(nn.Module):
         # Initialize logvar to a reasonable value
         # log(1000) ≈ 6.9, so exp(logvar) ≈ 1000, which helps with large initial rec_loss
         self.logvar = nn.Parameter(torch.ones(size=(), dtype=torch.float32) * 6.0)
+
+        # NO2 MLP probe (if enabled)
+        self.no2_probe = None
+        if no2_mlp_hidden is not None and no2_weight > 0:
+            layers = []
+            in_features = self.embed_dim  # Latent channels
+            for hidden_dim in no2_mlp_hidden:
+                layers.extend([
+                    nn.Conv2d(in_features, hidden_dim, kernel_size=1),
+                    nn.ReLU(),
+                ])
+                in_features = hidden_dim
+            # Final layer to single channel
+            layers.append(nn.Conv2d(in_features, 1, kernel_size=1))
+            self.no2_probe = nn.Sequential(*layers)
 
     def encode(self, x):
         h = self.encoder(x)
@@ -649,6 +667,16 @@ class AutoencoderKL(nn.Module):
         loss = nll_loss + kl_loss
         metrics = {"kl_loss": kl_loss, "nll_loss": nll_loss, "loss": loss}
         return loss, metrics
+
+    def predict_no2(self, x):
+        """Predict NO2 from input using encoder + MLP probe."""
+        if self.no2_probe is None:
+            raise ValueError("NO2 probe not initialized")
+
+        posterior = self.encode(x)
+        z = posterior.mean  # Use mean of latent distribution
+        no2_pred = self.no2_probe(z)  # [B, 1, H_latent, W_latent]
+        return no2_pred
 
 
 # ============= Simple Wrapper =============
@@ -710,6 +738,8 @@ def get_model(model_params, device):
     embed_dim = config_params.get("embed_dim", 32)
     kl_weight = config_params.get("kl_weight", 0.000001)
     nll_loss_type = config_params.get("nll_loss_type", "l1")
+    no2_weight = config_params.get("no2_weight", 0.0)
+    no2_mlp_hidden = config_params.get("no2_mlp_hidden", None)
 
     vae = AutoencoderKL(
         enc_dec_params=enc_dec_params,
@@ -718,6 +748,8 @@ def get_model(model_params, device):
         weight_decay=1.0e-5,
         nll_loss_type=nll_loss_type,
         kl_weight=kl_weight,
+        no2_weight=no2_weight,
+        no2_mlp_hidden=no2_mlp_hidden,
     )
     model = SpectralVAE(vae)
     model = model.to(device)

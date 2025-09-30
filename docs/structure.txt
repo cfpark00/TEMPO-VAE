@@ -1,6 +1,6 @@
 TEMPO Project Structure
 =======================
-Last Updated: 2025-09-18
+Last Updated: 2025-09-29
 
 Root Directory: /n/holylfs06/LABS/finkbeiner_lab/Users/cfpark00/datadir/TEMPO/
 Additional Directory: /n/home12/cfpark00/TEMPO/
@@ -17,12 +17,18 @@ src/
 │   ├── download_tempo_cldo4_data.py # Download TEMPO CLDO4 L2 data
 │   ├── compute_tempo_stats.py       # Compute global mean/std for normalization
 │   ├── prepare_tempo_tiles.py       # Extract tiles from TEMPO files (with source tracking)
+│   ├── prepare_tempo_tiles_with_l2.py # Extract tiles with L2 components (NO2, O3TOT, HCHO, CLDO4)
 │   ├── train_vae.py                 # Train VAE on TEMPO tiles
+│   ├── train_vae_l2_supervised.py   # Train VAE with multi-task L2 supervision (all 4 products)
 │   ├── analyze_reconstruction.py    # Analyze VAE reconstructions on validation data
-│   └── extract_pca_components.py    # Extract PCA components for RGB visualization
+│   ├── evaluate_reconstruction.py   # Evaluate reconstruction error across checkpoints
+│   ├── extract_pca_components.py    # Extract PCA components for RGB visualization
+│   └── linear_probe_analysis.py     # Train linear/MLP probes from VAE latents to L2 products
 ├── model.py                          # Complete VAE model (exact mltools architecture)
-├── tempo_data.py                    # TEMPO tile data loading with buffering
-├── train_utils.py                   # Training utilities with live plotting
+├── model_with_l2.py                  # VAE with L2 prediction heads (single MLP → 4 outputs)
+├── tempo_data.py                     # TEMPO tile data loading with buffering
+├── tempo_data_with_l2.py            # TEMPO tile + L2 data loading with buffering
+├── train_utils.py                    # Training utilities with live plotting
 └── utils.py                          # Shared utilities (init_directory)
 
 configs/
@@ -34,12 +40,18 @@ configs/
 │   └── download_tempo_cldo4_jan_2025_LA.yaml
 ├── data_preparation/                 # Data processing configs
 │   ├── compute_stats.yaml
-│   └── prepare_tiles.yaml
+│   ├── prepare_tiles.yaml
+│   └── prepare_tiles_with_l2.yaml  # Tile prep with L2 components
 ├── training/                         # Model training configs
-│   └── train_vae_default.yaml       # VAE training configuration
+│   ├── train_vae_default.yaml       # VAE training configuration
+│   └── train_vae_l2_supervised.yaml # VAE with multi-task L2 supervision
 └── analysis/                         # Analysis and visualization configs
     ├── reconstruction_analysis.yaml # VAE reconstruction analysis
-    └── extract_pca_components.yaml  # PCA component extraction
+    ├── evaluate_reconstruction.yaml # Multi-checkpoint evaluation
+    ├── extract_pca_components.yaml  # PCA component extraction
+    ├── linear_probe.yaml            # Linear probe from latents to L2 products
+    ├── mlp_probe.yaml               # MLP probe from latents to L2 products
+    └── mlp_probe_l2_supervised_35k.yaml # MLP probe for L2 supervised model at step 35k
 
 scripts/                              # Bash wrapper scripts
 ├── data/
@@ -50,11 +62,17 @@ scripts/                              # Bash wrapper scripts
 │   └── download_tempo_cldo4_jan_2025_LA.sh
 ├── data_preparation/
 │   ├── compute_stats.sh
-│   └── prepare_tiles.sh
+│   ├── prepare_tiles.sh
+│   └── run_prepare_tiles_with_l2.sh # Prepare tiles with L2 components
 ├── training/
-│   └── train_vae_default.sh         # Train VAE with default config
+│   ├── train_vae_default.sh         # Train VAE with default config
+│   └── run_train_vae_l2_supervised.sh # Train VAE with multi-task L2 supervision
 └── analysis/
-    └── extract_pca_components.sh    # Extract PCA components
+    ├── extract_pca_components.sh    # Extract PCA components
+    ├── run_evaluate_reconstruction.sh # Evaluate across checkpoints
+    ├── run_linear_probe.sh           # Train linear probe from latents to L2
+    ├── run_mlp_probe.sh              # Train MLP probe from latents to L2
+    └── run_mlp_probe_l2_supervised_35k.sh # MLP probe for L2 supervised checkpoint
 
 data/                                 # All data outputs (gitignored)
 ├── tempo_jan2025_LA/                # Downloaded RAD L1 data
@@ -90,8 +108,18 @@ docs/
 │   ├── 2025-09-17/
 │   │   ├── 02-03_tempo_l2_products_migration.md
 │   │   └── 03-12_vae_implementation_cleanup.md
-│   └── 2025-09-18/
-│       └── 13-54_git_setup_and_analysis_tools.md
+│   ├── 2025-09-18/
+│   │   ├── 13-54_git_setup_and_analysis_tools.md
+│   │   └── 17-21_linear_probe_analysis.md
+│   ├── 2025-09-27/
+│   │   ├── 1711_vae_no2_supervision_and_l2_tiles.md
+│   │   ├── 18-09_vae_l2_multitask_supervision.md
+│   │   └── 18-56_paper_citations_and_title_updates.md
+│   └── 2025-09-29/
+│       ├── 14-58_probe_analysis_and_no2_outliers.md
+│       ├── 19-07_paper_appendix_restructuring.md
+│       ├── 21-37_spectral_reconstruction_figure.md
+│       └── 21-48_probe_analysis_figures.md
 ├── structure.txt                    # This file
 ├── repo_usage.md                    # Development principles
 └── closing_tasks.md                 # End-of-session checklist
@@ -104,12 +132,66 @@ old/                                 # Legacy code for reference
 
 scratch/                            # Temporary work (gitignored)
 ├── check_nc_dimensions.ipynb      # Check TEMPO file dimensions
-├── simple_5panel_plot.py          # 6-panel visualization of all products
+├── simple_5panel_plot.py          # 5-panel visualization of TEMPO products (L1 RGB + 4 L2)
+├── check_validity.py              # Check radiance data validity
+├── find_good_region.py            # Find regions with valid data
 ├── check_l2_variables.py          # Inspect L2 product variables
 ├── check_all_tempo_structure.py   # Complete file structure analysis
 ├── compare_l1_l2_alignment.ipynb  # L1/L2 alignment verification
 ├── compare_l1_all_l2_products.ipynb # All products comparison
+├── tiles_with_l2_check/
+│   ├── visualize_tiles_with_l2.py # Visualize L1 tiles with L2 products
+│   └── tiles_visualization.png    # Output visualization
+├── no2_analysis/                  # NO2 data quality analysis
+│   ├── analyze_no2_stats.py      # Statistics across all NO2 files
+│   ├── visualize_outlier.py      # Deep dive into outlier file
+│   ├── check_asinh_effect.py     # asinh normalization impact on outliers
+│   ├── no2_statistics.png        # NO2 statistics visualization
+│   ├── outlier_visualization.png # Outlier file analysis
+│   └── asinh_outlier_effect.png  # asinh normalization effects
+├── spectral_reconstruction_data/  # Spectral reconstruction analysis
+│   ├── extract_spectra.py        # Extract validation spectra from VAE
+│   ├── plot_channel_errors.py    # Generate channel-wise error plots
+│   ├── validation_spectra.pt     # Extracted 61,440 spectra (1.0 GB)
+│   └── channel_wise_errors.png   # Channel-wise RMSE plot
+├── probing_figures/               # Probe analysis figure generation (2025-09-29)
+│   ├── generate_probe_comparison_figures.py # Script to generate all probe figures
+│   ├── unsupervised_model_linear_learning_curves.png
+│   ├── unsupervised_model_mlp_learning_curves.png
+│   ├── unsupervised_model_linear_scatter.png
+│   ├── unsupervised_model_mlp_scatter.png
+│   ├── l2_supervised_model_linear_learning_curves.png
+│   ├── l2_supervised_model_mlp_learning_curves.png
+│   ├── l2_supervised_model_linear_scatter.png
+│   └── l2_supervised_model_mlp_scatter.png
+├── tempo_5panel.png               # Generated TEMPO data visualization
+├── valid_data_map.png             # Valid data distribution map
 └── .gitkeep
+
+paper/                              # AAAI 2026 paper submission
+├── main.tex                        # Main paper document
+├── aaai2026.sty                   # AAAI 2026 style file
+├── aaai2026.bib                   # Bibliography
+├── main.pdf                       # Compiled paper (12 pages)
+└── figures/
+    ├── tempo_5panel.png           # TEMPO data products figure (full-width)
+    ├── reconstructions_step_200000.png # VAE reconstruction quality
+    ├── channel_wise_reconstruction_errors.png # Channel-wise RMSE analysis (Fig 3)
+    ├── combined_losses.png        # Training loss dynamics (Fig 5)
+    ├── all_normalizations_comparison.png # Normalization comparison (Fig 7)
+    ├── base_training_dynamics.png # Unsupervised training dynamics (Fig 8)
+    ├── supervised_training_dynamics.png # Supervised training dynamics (Fig 9)
+    ├── unsupervised_linear_scatter.png # Unsupervised linear probe predictions (main text)
+    ├── unsupervised_mlp_scatter.png    # Unsupervised MLP probe predictions (main text)
+    ├── supervised_linear_scatter.png   # Supervised linear probe predictions (main text)
+    ├── supervised_mlp_scatter.png      # Supervised MLP probe predictions (main text)
+    ├── probe_learning_curves/     # Probe training dynamics (appendix)
+    │   ├── unsupervised_linear_learning_curves.png
+    │   ├── unsupervised_mlp_learning_curves.png
+    │   ├── supervised_linear_learning_curves.png
+    │   └── supervised_mlp_learning_curves.png
+    ├── recons/                    # Unsupervised reconstruction examples (Fig 10)
+    └── recons_supervised/         # Supervised reconstruction examples (Fig 11)
 
 test_load_tiles.ipynb               # Notebook for testing tile loading
 

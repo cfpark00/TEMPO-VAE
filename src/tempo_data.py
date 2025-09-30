@@ -75,19 +75,16 @@ class TEMPODataset(torch.utils.data.IterableDataset):
 
     def load_file(self, file_idx: int):
         """Load tiles from a file into buffer."""
-        try:
-            tiles = torch.load(self.files[file_idx], weights_only=False)
+        tiles = torch.load(self.files[file_idx], weights_only=False)
 
-            # Handle both single tile and batch of tiles
-            if tiles.dim() == 3:
-                # Single tile: [H, W, C]
-                self.buffer.put(tiles.cpu())
-            else:
-                # Batch of tiles: [N, H, W, C]
-                for tile in tiles:
-                    self.buffer.put(tile.cpu())
-        except Exception as e:
-            print(f"Error loading {self.files[file_idx]}: {e}")
+        # Handle both single tile and batch of tiles
+        if tiles.dim() == 3:
+            # Single tile: [H, W, C]
+            self.buffer.put(tiles.cpu())
+        else:
+            # Batch of tiles: [N, H, W, C]
+            for tile in tiles:
+                self.buffer.put(tile.cpu())
 
     def get_data(self):
         """Get single data sample."""

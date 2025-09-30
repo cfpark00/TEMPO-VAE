@@ -1,0 +1,43 @@
+# Configuration for evaluating reconstruction error across checkpoints
+output_dir: "eval_reconstruction"  # This will be created within exp_dir
+
+# Experiment directory containing checkpoints
+exp_dir: "/n/home12/cfpark00/TEMPO/data/vae_training/default_run"
+
+# Data configuration
+data:
+  # Use tiles directly instead of NC files
+  val_dir: "/n/home12/cfpark00/TEMPO/data/tempo_jan2025_LA_tiles/val"
+  # Number of validation samples to evaluate (set to null for all)
+  max_val_samples: 100  # Use subset for faster evaluation, set to null for full validation set
+
+# Model configuration
+model:
+  # Path to training config (relative to exp_dir)
+  training_config_path: "config.yaml"
+  # Pattern for checkpoint files
+  checkpoint_pattern: "checkpoints/ckpt_step=*.pt"
+
+# Evaluation settings
+evaluation:
+  # Batch size for processing
+  batch_size: 8
+  # Whether to evaluate only the best checkpoint or all
+  evaluate_all: true
+  # Metrics to compute
+  metrics:
+    - mse  # Mean squared error
+    - mae  # Mean absolute error
+    - psnr  # Peak signal-to-noise ratio
+
+# Plotting configuration
+plotting:
+  # Plot metrics over training steps
+  plot_metrics: true
+  # Save individual checkpoint evaluations
+  save_per_checkpoint: false
+  # DPI for saved figures
+  dpi: 150
+
+# Random seed for reproducibility
+seed: 42

@@ -1,0 +1,53 @@
+Structure Updates - 2025-09-27
+==============================
+
+New Files Added:
+---------------
+src/scripts/
+- prepare_tempo_tiles_with_l2.py     # Extract tiles with L2 components
+- train_vae_no2_supervised.py        # VAE training with NO2 supervision
+- evaluate_reconstruction.py         # Multi-checkpoint evaluation
+
+configs/
+- data_preparation/prepare_tiles_with_l2.yaml
+- training/train_vae_no2_latent_supervised.yaml
+- analysis/evaluate_reconstruction.yaml
+
+scripts/
+- data_preparation/run_prepare_tiles_with_l2.sh
+- training/run_train_vae_no2_supervised.sh
+- analysis/run_evaluate_reconstruction.sh
+
+docs/
+- research_report.md                 # Comprehensive research documentation
+- logs/2025-09-27/                   # Today's development logs
+
+scratch/tiles_with_l2_check/
+- visualize_tiles_with_l2.py        # L1/L2 tile visualization
+
+Modified Files:
+--------------
+src/model.py:
+- Added NO2 supervision to AutoencoderKL class
+- Added MLP probe (32 → 512 → 512 → 1)
+- Added predict_no2() method
+
+Key Architectural Changes:
+-------------------------
+1. VAE model now supports auxiliary task supervision
+2. Data pipeline enforces fail-fast validation (no silent failures)
+3. L2 tiles stored alongside spectral tiles with exact spatial correspondence
+
+Data Structure for L2 Tiles:
+---------------------------
+tempo_jan2025_LA_tiles_with_l2/
+├── train/
+│   ├── NNNNN.pt                    # Spectral tiles [64, 64, 64, 1028]
+│   ├── l2_NO2/NNNNN.pt             # NO2 tiles [64, 64, 64]
+│   ├── l2_O3TOT/NNNNN.pt           # O3TOT tiles
+│   ├── l2_HCHO/NNNNN.pt            # HCHO tiles
+│   └── l2_CLDO4/NNNNN.pt           # CLDO4 tiles
+├── val/                             # Same structure
+├── l2_stats.pt                     # Normalization stats for L2
+├── mean_spectrum.pt                # Spectral normalization
+└── std_spectrum.pt

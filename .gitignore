@@ -16,6 +16,9 @@ env/
 # Data
 data/
 
+paper/
+paper.zip
+
 old/
 
 # Scratch - temporary work directory (NOT ignored, just its contents)

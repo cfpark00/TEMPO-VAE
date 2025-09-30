@@ -1,0 +1,78 @@
+# Configuration for preparing ML-ready tiles with L2 components from TEMPO data
+
+# REQUIRED: Input and output directories
+input_dir: "data/tempo_jan2025_LA/raw"
+output_dir: "data/tempo_jan2025_LA_tiles_with_l2"
+
+# Global normalization for spectral data
+normalization:
+  # Load from existing stats (if available)
+  mean_file: "data/tempo_stats/tempo_mean_spectrum.pt"
+  std_file: "data/tempo_stats/tempo_std_spectrum.pt"
+
+# Processing parameters
+processing:
+  # Which band to use
+  band: "band_290_490_nm"
+
+  # Tile dimensions [mirror, track]
+  tile_size: [64, 64]
+
+  # Number of tiles to extract per file
+  tiles_per_file: 64
+
+  # Radiance preprocessing
+  min_radiance: 1.0  # Clamp before log
+  clip_min: -10       # Clip z-scores
+  clip_max: 10
+
+# L2 component configuration
+l2:
+  # Base path for L2 data
+  base_path: "/n/home12/cfpark00/TEMPO/data"
+
+  # Components to extract
+  components: ["NO2", "O3TOT", "HCHO", "CLDO4"]
+
+  # L2 product names for each component (used in filename replacement)
+  products:
+    NO2: "NO2"
+    O3TOT: "O3TOT"
+    HCHO: "HCHO"
+    CLDO4: "CLDO4"
+
+  # Subdirectories for each product (under base_path)
+  subdirs:
+    NO2: "tempo_jan2025_LA_NO2"
+    O3TOT: "tempo_jan2025_LA_O3TOT"
+    HCHO: "tempo_jan2025_LA_HCHO"
+    CLDO4: "tempo_jan2025_LA_CLDO4"
+
+  # Field names in L2 files
+  fields:
+    NO2: "vertical_column_troposphere"
+    O3TOT: "column_amount_o3"
+    HCHO: "vertical_column"
+    CLDO4: "cloud_fraction"
+
+  # Scaling factors
+  scales:
+    NO2: 1.0e15      # Convert to 10^15 molec/cm²
+    O3TOT: 1.0       # Already in DU
+    HCHO: 1.0e16     # Convert to 10^16 molec/cm²
+    CLDO4: 1.0       # Already 0-1
+
+  # Normalization types for each component
+  norm_types:
+    NO2: "asinh"     # Handle negative values and heavy tails
+    O3TOT: "zscore"  # Standard normalization
+    HCHO: "asinh"    # Similar to NO2
+    CLDO4: "logit"   # For [0,1] values
+
+  # Whether to compute global stats from training data
+  compute_global_stats: true
+
+# Train/val split (use same seed for consistency with spectral-only tiles)
+split:
+  val_fraction: 0.3
+  seed: 42  # SAME SEED as original to maintain split consistency

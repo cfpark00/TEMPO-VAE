@@ -1,0 +1,55 @@
+output_dir: "data/analysis/linear_probe_analysis_l2_supervised"
+seed: 42
+
+# Data paths
+data:
+  l1_nc_path: "/n/home12/cfpark00/TEMPO/data/tempo_jan2025_LA"
+  l2_base_path: "/n/home12/cfpark00/TEMPO/data"
+  tiles_path: "/n/home12/cfpark00/TEMPO/data/tempo_jan2025_LA_tiles_with_l2"  # Using the L2-aware tiles
+
+  # L2 product subdirectories (relative to l2_base_path)
+  l2_products:
+    NO2: "tempo_jan2025_LA_NO2"
+    O3TOT: "tempo_jan2025_LA_O3TOT"
+    HCHO: "tempo_jan2025_LA_HCHO"
+    CLDO4: "tempo_jan2025_LA_CLDO4"
+
+# Model settings
+model:
+  checkpoint_path: "/n/home12/cfpark00/TEMPO/data/vae_training/l2_supervised_run/checkpoints/ckpt_step=190000.pt"
+  training_config_path: "/n/home12/cfpark00/TEMPO/data/vae_training/l2_supervised_run/config.yaml"
+
+# Linear probe settings
+probe:
+  n_pixels_per_file: 2000  # Sample 1000 pixels from each file
+  test_split: 0.2  # 80/20 train/test split
+  max_epochs: 100
+  learning_rate: 0.001
+  weight_decay: 0.01  # L2 regularization strength
+  batch_size: 512  # Mini-batch size for training
+
+# Component field settings
+components:
+  # Which fields to extract from each L2 product
+  NO2:
+    field: "vertical_column_troposphere"
+    scale: 1e15  # Convert to 10^15 molec/cm²
+    norm_type: "asinh"  # Better for heavy-tailed data with negatives
+  O3TOT:
+    field: "column_amount_o3"
+    scale: 1.0  # Already in DU
+    norm_type: "zscore"
+  HCHO:
+    field: "vertical_column"
+    scale: 1e16  # Convert to 10^16 molec/cm²
+    norm_type: "asinh"  # Also has negative values and heavy tails like NO2
+  CLDO4:
+    field: "cloud_fraction"
+    scale: 1.0  # Already 0-1
+    norm_type: "logit"  # Inverse sigmoid to spread out [0,1] values
+
+# Visualization
+visualization:
+  plot_correlations: true
+  plot_predictions: true
+  n_examples: 500  # Number of test examples to plot
